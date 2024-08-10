@@ -16,17 +16,17 @@ app = Flask(__name__)
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
 
-# client = MongoClient(f'mongodb://{config.MONGO_USER}:{config.MONGO_PASS}@{config.MONGO_HOST}:{config.MONGO_PORT}/{config.MONGO_DB}?authSource=admin',
-#                      connectTimeoutMS=30000,  # 30 seconds
-#                      socketTimeoutMS=30000,  # 30 seconds
-#                      serverSelectionTimeoutMS=30000  # 30 seconds
-#                      )
-# db = client[config.MONGO_DB]
+client = MongoClient(f'mongodb://{config.MONGO_USER}:{config.MONGO_PASS}@{config.MONGO_HOST}:{config.MONGO_PORT}/{config.MONGO_DB}?authSource=admin',
+                     connectTimeoutMS=30000,  # 30 seconds
+                     socketTimeoutMS=30000,  # 30 seconds
+                     serverSelectionTimeoutMS=30000  # 30 seconds
+                     )
+db = client[config.MONGO_DB]
 
 
-client = MongoClient(
-    "mongodb+srv://zaporojan40:xl2PWid0jE0etk1P@cluster0.b8gpgd1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db = client['bigDataDB']
+# client = MongoClient(
+#     "mongodb+srv://zaporojan40:xl2PWid0jE0etk1P@cluster0.b8gpgd1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+# db = client['bigDataDB']
 
 
 # Test connection and fetch one document
