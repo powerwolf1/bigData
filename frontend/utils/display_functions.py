@@ -491,6 +491,121 @@ def display_validation_page():
         st.write("Please select a valid collection for deleting. (We can delete only Parsed collections.)")
 
 
+# def display_produs_management_page():
+#     st.title("Produs Management Interface")
+#
+#     if 'all_produs' not in st.session_state:
+#         st.session_state.all_produs = fetch_all_produs()
+#         st.session_state.prod_dict = {prod["_id"]: prod for prod in st.session_state.all_produs}
+#         st.session_state.prod_ids = list(st.session_state.prod_dict.keys())
+#         st.session_state.prod_index = 0
+#
+#     if not st.session_state.all_produs:
+#         st.write("No produs found.")
+#         return
+#
+#     selected_prod_id = st.selectbox("Select Produs ID", st.session_state.prod_ids, index=st.session_state.prod_index)
+#     selected_prod = st.session_state.prod_dict[selected_prod_id]
+#
+#     st.write("Produs Details:", selected_prod)
+#     form_container = st.container()
+#
+#     if st.button("Next"):
+#         st.session_state.prod_index = (st.session_state.prod_index + 1) % len(st.session_state.prod_ids)
+#         st.rerun()
+#
+#     if st.button("Find Bon Zilnic"):
+#         bon_id = selected_prod["bon_id"]
+#         bon = fetch_bon_by_id(bon_id)
+#         if bon:
+#             nr_z = bon["Z"]
+#             DATA = bon["DATA"]
+#             total = bon["total"]
+#             totA = bon["totA"]
+#             totB = bon["totB"]
+#             totC = bon["totC"]
+#             totD = bon["totD"]
+#             bon_zilnic = fetch_bon_zilnic(nr_z, DATA, total, totA, totB, totC, totD)
+#
+#             st.write("Fetched Bon Zilnic:", bon_zilnic)
+#
+#             # Updating Bon Zilnic
+#             if bon_zilnic:
+#                 st.write("Bon Zilnic Details:", bon_zilnic)
+#                 with st.expander("Edit Bon Zilnic"):
+#                     if 'form_data_updating' not in st.session_state:
+#                         st.session_state.form_data_updating = {field: str(value) for field, value in bon_zilnic.items()
+#                                                                if field != "_id"}
+#                         st.session_state.form_data_updating['_id'] = bon_zilnic['_id']
+#
+#                     for field, value in st.session_state.form_data_updating.items():
+#                         st.session_state.form_data_updating[field] = st.text_input(field, value=value)
+#
+#                     if st.button('Update Bon Zilnic'):
+#                         update_bon_zilnic(st.session_state.form_data_updating)
+#
+#             # Creating Bon Zilnic
+#             else:
+#                 st.write("No matching Bon Zilnic found.")
+#                 schema = fetch_schema('ECR.bon_zilnic')
+#
+#                 with st.expander("Create Bon Zilnic"):
+#                     if 'form_data' not in st.session_state:
+#                         st.session_state.form_data = {field: "" for field in schema}
+#                         st.session_state.form_data.update({
+#                             "nr": nr_z,
+#                             "DATA": DATA,
+#                             "total_vanzari": total,
+#                             "total_a": totA,
+#                             "total_b": totB,
+#                             "total_c": totC,
+#                             "total_d": totD
+#                         })
+#
+#                     for field, value in st.session_state.form_data.items():
+#                         st.session_state.form_data[field] = st.text_input(field, value=value)
+#
+#                     if st.button('Create Bon Zilnic'):
+#                         create_bon_zilnic(st.session_state.form_data)
+
+            # if bon_zilnic:
+            #     st.write("Bon Zilnic Details:", bon_zilnic)
+            #     with st.expander("Edit Bon Zilnic"):
+            #         form_data_updating = {}
+            #         for field, value in bon_zilnic.items():
+            #             if field != "_id":
+            #                 form_data_updating[field] = st.text_input(field, value=str(value))
+            #
+            #         form_data_updating['_id'] = bon_zilnic['_id']
+            #         print("updated form_data", form_data_updating)
+            #         st.button('Update Bon Zilnic', on_click=update_bon_zilnic, args=[form_data_updating])
+            #
+            # else:
+            #     st.write("No matching Bon Zilnic found.")
+            #     schema = fetch_schema('ECR.bon_zilnic')
+            #
+            #     with st.expander("Create Bon Zilnic"):
+            #         form_data = {field: "" for field in schema}
+            #         form_data.update({
+            #             "nr": nr_z,
+            #             "DATA": DATA,
+            #             "total_vanzari": total,
+            #             "total_a": totA,
+            #             "total_b": totB,
+            #             "total_c": totC,
+            #             "total_d": totD
+            #         })
+            #         for field, value in form_data.items():
+            #             form_data[field] = st.text_input(field, value=str(value))
+            #
+            #         print(form_data, 'form_data')
+            #         st.button('Create Bon Zilnic', on_click=create_bon_zilnic, args=[form_data])
+
+def initialize_form_data(schema, default_values):
+    if 'form_data' not in st.session_state or st.session_state.form_data is None:
+        st.session_state.form_data = {field: default_values.get(field, "") for field in schema}
+
+
 def display_produs_management_page():
     st.title("Produs Management Interface")
 
@@ -509,11 +624,14 @@ def display_produs_management_page():
 
     st.write("Produs Details:", selected_prod)
 
-    if st.button("Next"):
+    if st.button("Next", key="next_button"):
         st.session_state.prod_index = (st.session_state.prod_index + 1) % len(st.session_state.prod_ids)
         st.rerun()
 
-    if st.button("Find Bon Zilnic"):
+    if st.button("Find Bon Zilnic", key="find_bon_zilnic_button"):
+        st.session_state.find_bon_zilnic_clicked = True
+
+    if st.session_state.get('find_bon_zilnic_clicked', False):
         bon_id = selected_prod["bon_id"]
         bon = fetch_bon_by_id(bon_id)
         if bon:
@@ -530,58 +648,70 @@ def display_produs_management_page():
 
             if bon_zilnic:
                 st.write("Bon Zilnic Details:", bon_zilnic)
-                with st.expander("Edit Bon Zilnic"):
-                    form_data_updating = {}
-                    for field, value in bon_zilnic.items():
-                        if field != "_id":
-                            form_data_updating[field] = st.text_input(field, value=str(value))
+                if 'form_data_updating' not in st.session_state:
+                    st.session_state.form_data_updating = {field: str(value) for field, value in bon_zilnic.items() if
+                                                           field != "_id"}
+                    st.session_state.form_data_updating['_id'] = bon_zilnic['_id']
 
-                    form_data_updating['_id'] = bon_zilnic['_id']
-                    print("updated form_data", form_data_updating)
-                    st.button('Create Bon Zilnic', on_click=update_bon_zilnic, args=[form_data_updating])
+                with st.form(key="edit_bon_zilnic_form"):
+                    for field, value in st.session_state.form_data_updating.items():
+                        st.session_state.form_data_updating[field] = st.text_input(field, value=value)
+
+                    submitted = st.form_submit_button("Update Bon Zilnic")
+                    if submitted:
+                        update_bon_zilnic(st.session_state.form_data_updating)
+                        st.success("Bon Zilnic updated successfully!")
+                        st.rerun()
 
             else:
                 st.write("No matching Bon Zilnic found.")
                 schema = fetch_schema('ECR.bon_zilnic')
 
-                with st.expander("Create Bon Zilnic"):
-                    form_data = {field: "" for field in schema}
-                    form_data.update({
-                        "nr": nr_z,
-                        "DATA": DATA,
-                        "total_vanzari": total,
-                        "total_a": totA,
-                        "total_b": totB,
-                        "total_c": totC,
-                        "total_d": totD
-                    })
-                    for field, value in form_data.items():
-                        form_data[field] = st.text_input(field, value=str(value))
+                default_values = {
+                    "nr": nr_z,
+                    "DATA": DATA,
+                    "total_vanzari": total,
+                    "total_a": totA,
+                    "total_b": totB,
+                    "total_c": totC,
+                    "total_d": totD
+                }
 
-                    print(form_data, 'form_data')
-                    st.button('Create Bon Zilnic', on_click=create_bon_zilnic, args=[form_data])
-                # with st.expander("Create Bon Zilnic"):
-                # with st.form(key="bon_zilnic_form"):
-                #     form_data = {field: "" for field in schema}
-                #     form_data.update({
-                #         "nr": nr_z,
-                #         "DATA": DATA,
-                #         "total_vanzari": total,
-                #         "total_a": totA,
-                #         "total_b": totB,
-                #         "total_c": totC,
-                #         "total_d": totD
-                #     })
-                #
-                #     for field in form_data.keys():
-                #         form_data[field] = st.text_input(field, value=form_data[field])
-                #
-                #     print(form_data, 'form_data')
-                #
-                #     st.form_submit_button(label="Create Bon Zilnic", on_click=create_bon_zilnic, args=(form_data, ))
+                initialize_form_data(schema, default_values)
 
-                    # if submit_button:
-                    #     print("Creating Bon Zilnic with data:", form_data)
-                    #     create_bon_zilnic(form_data)
-                    #     st.success("Bon Zilnic created successfully!")
-                    #     st.rerun()
+                with st.form(key="create_bon_zilnic_form"):
+                    for field in st.session_state.form_data.keys():
+                        st.session_state.form_data[field] = st.text_input(field,
+                                                                          value=st.session_state.form_data[field])
+
+                    submitted = st.form_submit_button("Create Bon Zilnic")
+                    if submitted:
+                        st.session_state.submission_status = "in_progress"
+                        st.write("Button clicked: proceeding with creation...")
+                        create_bon_zilnic(st.session_state.form_data)
+
+                        # Confirm document creation
+                        st.write("Attempting to retrieve newly created Bon Zilnic...")
+                        nr_z = st.session_state.form_data['nr']
+                        DATA = st.session_state.form_data['DATA']
+                        total = st.session_state.form_data['total_vanzari']
+                        totA = st.session_state.form_data['total_a']
+                        totB = st.session_state.form_data['total_b']
+                        totC = st.session_state.form_data['total_c']
+                        totD = st.session_state.form_data['total_d']
+                        bon_zilnic = fetch_bon_zilnic(nr_z, DATA, total, totA, totB, totC, totD)
+
+                        if bon_zilnic:
+                            st.write("Document successfully retrieved immediately after creation:", bon_zilnic)
+                        else:
+                            st.error("Document not found immediately after creation. This indicates a potential issue.")
+
+                        st.session_state.submission_status = "completed"
+                        st.success("Document created successfully!")
+
+    if st.session_state.get('submission_status') == "completed":
+        st.success("Bon Zilnic created successfully!")
+        # if st.button("Acknowledge"):
+        #     st.session_state.form_data = None  # Reset form data after submission
+        #     st.session_state.submission_status = None
+        #     st.rerun()

@@ -69,27 +69,33 @@ def main_page():
         if isinstance(document_id, dict) and "$oid" in document_id:
             document_id = document_id["$oid"]
 
-        # form to edit
-        # create form inputs for each field
         with st.expander(f'Edit Document ID: {document_id}'):
-            form_data = {}
-            for field, value in selected_document.items():
-                if field != "_id":
-                    form_data[field] = st.text_input(field, value=str(value))
+            # Initialize form data in session state if not already done
+            if f'form_data_{document_id}' not in st.session_state:
+                st.session_state[f'form_data_{document_id}'] = {
+                    field: str(value) for field, value in selected_document.items() if field != "_id"
+                }
 
-            # Update MongoDB Document
-            print(form_data, 'initial formdata')
+            # Use st.form for controlled submission
+            with st.form(key=f'edit_form_{document_id}'):
+                # Display form fields
+                for field in st.session_state[f'form_data_{document_id}'].keys():
+                    st.session_state[f'form_data_{document_id}'][field] = st.text_input(field, value=
+                    st.session_state[f'form_data_{document_id}'][field])
 
-            st.button('Update Document', on_click=update_document, args=(st.session_state.collection, document_id,
-                                                                         form_data))
+                # Update MongoDB Document
+                update_submitted = st.form_submit_button('Update Document')
+                if update_submitted:
+                    update_document(st.session_state.collection, document_id,
+                                    st.session_state[f'form_data_{document_id}'])
+                    st.success("Document updated successfully!")
+                    st.rerun()
 
-            # if st.button('Update Document'):
-            #     update_document(collection=st.session_state.collection, document_id=document_id,
-            #                     form_data=form_data)
-
-            # Delete MongoDB document
-            if st.button('Delete Document'):
+            # Delete MongoDB document with confirmation
+            if st.button('Delete Document', key=f'delete_button_{document_id}'):
                 delete_document(collection=st.session_state.collection, document_id=document_id)
+                st.success("Document deleted successfully!")
+                st.rerun()
 
         # Ensure the 'DATA' field is of datetime type for the chart
         y_axis_field = collection_y_axis_mapping.get(st.session_state.collection, 'total')

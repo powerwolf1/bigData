@@ -16,13 +16,17 @@ app = Flask(__name__)
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
 
-# client = MongoClient(f'mongodb://{config.MONGO_USER}:{config.MONGO_PASS}@{config.MONGO_HOST}:{config.MONGO_PORT}/{config.MONGO_DB}?authSource=admin')
-# db = client[config.MONGO_DB]
+client = MongoClient(f'mongodb://{config.MONGO_USER}:{config.MONGO_PASS}@{config.MONGO_HOST}:{config.MONGO_PORT}/{config.MONGO_DB}?authSource=admin',
+                     connectTimeoutMS=30000,  # 30 seconds
+                     socketTimeoutMS=30000,  # 30 seconds
+                     serverSelectionTimeoutMS=30000  # 30 seconds
+                     )
+db = client[config.MONGO_DB]
 
 
-client = MongoClient(
-    "mongodb+srv://zaporojan40:xl2PWid0jE0etk1P@cluster0.b8gpgd1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db = client['bigDataDB']
+# client = MongoClient(
+#     "mongodb+srv://zaporojan40:xl2PWid0jE0etk1P@cluster0.b8gpgd1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+# db = client['bigDataDB']
 
 
 # Test connection and fetch one document
@@ -873,33 +877,53 @@ def get_bon_by_id():
         return jsonify({"error": "Error fetching bon by id"}), 500
 
 
-@app.route('/get_bon_zilnic', methods=['GET'])
+import logging
+from flask import jsonify, request
+
+@app.route('/get_bon_zilnic', methods=['POST'])  # Use POST instead of GET
 def get_bon_zilnic():
-    nr_z = request.json.get('Z')
-    DATA = request.json.get('DATA')
-    total = request.json.get('total')
-    totA = request.json.get('totA')
-    totB = request.json.get('totB')
-    totC = request.json.get('totC')
-    totD = request.json.get('totD')
-
-    if not nr_z or not DATA or not total or not totA or not totB or not totC or not totD:
-        return jsonify({"error": "All parameters are required"}), 400
-
     try:
-        bon_zilnic = db["ECR.bon_zilnic"].find_one({
+        # Log the raw data for debugging
+        logging.debug(f"Raw request data: {request.data}")
+
+        # Attempt to parse JSON
+        nr_z = request.json.get('nr')
+        DATA = request.json.get('DATA')
+        total = request.json.get('total_vanzari')
+        totA = request.json.get('total_a')
+        totB = request.json.get('total_b')
+        totC = request.json.get('total_c')
+        totD = request.json.get('total_d')
+
+        # Log received values
+        print(f"Received values: nr={nr_z}, DATA={DATA}, total_vanzari={total}, total_a={totA}, total_b={totB}, total_c={totC}, total_d={totD}")
+
+        if not nr_z or not DATA:
+            logging.error("nr_z and DATA are required fields")
+            return jsonify({"error": "nr_z and DATA are required fields"}), 400
+
+        # Querying MongoDB
+        query = {
             "nr": nr_z,
             "DATA": DATA,
-            "total_vanzari": total,
-            "total_a": totA,
-            "total_b": totB,
-            "total_c": totC,
-            "total_d": totD
-        })
+            "total_vanzari": str(total),
+            "total_a": str(totA),
+            "total_b": str(totB),
+            "total_c": str(totC),
+            "total_d": str(totD)
+        }
+
+        print(f"MongoDB query: {query}")
+
+        bon_zilnic = db["ECR.bon_zilnic"].find_one(query)
+
         if bon_zilnic:
+            print("Bon Zilnic found")
             return jsonify(serialize_doc(bon_zilnic)), 200
         else:
+            print("Bon Zilnic not found with the provided query")
             return jsonify({"error": "Bon zilnic not found"}), 404
+
     except Exception as e:
         logging.error(f"Error fetching bon zilnic: {e}")
         return jsonify({"error": "Error fetching bon zilnic"}), 500

@@ -253,17 +253,17 @@ def fetch_bon_zilnic(nr_z, DATA, total, totA, totB, totC, totD):
     url = f'{API_URL}/get_bon_zilnic'
 
     params = {
-        'Z': nr_z,
+        'nr': nr_z,
         'DATA': DATA,
-        'total': total,
-        'totA': totA,
-        'totB': totB,
-        'totC': totC,
-        'totD': totD
+        'total_vanzari': total,
+        'total_a': totA,
+        'total_b': totB,
+        'total_c': totC,
+        'total_d': totD
     }
 
     try:
-        response = requests.get(url, json=params)
+        response = requests.post(url, json=params)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:

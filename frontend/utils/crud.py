@@ -81,7 +81,7 @@ def create_bon_zilnic(data):
         response = requests.post(url, json=data)
         response.raise_for_status()
 
-        st.success('Document created successfully.')
+        # st.success('Document created successfully.')
     except requests.exceptions.RequestException as e:
         st.error(f"Error creating bon zilnic: {e}")
 
@@ -103,7 +103,7 @@ def update_bon_zilnic(data):
         response = requests.put(url, json=data)
         response.raise_for_status()  # Raise an error if the request failed
 
-        st.success('Document updated successfully.')
+        # st.success('Document updated successfully.')
 
     except requests.exceptions.RequestException as e:
         st.error(f"Error updating bon zilnic: {e}")
