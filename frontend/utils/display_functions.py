@@ -609,8 +609,20 @@ def initialize_form_data(schema, default_values):
 def display_produs_management_page():
     st.title("Produs Management Interface")
 
+    # Initialize pagination state
+    if 'prod_page' not in st.session_state:
+        st.session_state.prod_page = 1
+
+    if 'prod_limit' not in st.session_state:
+        st.session_state.prod_limit = 20
+
+    # Fetch products for the current page
     if 'all_produs' not in st.session_state:
-        st.session_state.all_produs = fetch_all_produs()
+        st.session_state.all_produs, total_count = fetch_all_produs(
+            page=st.session_state.prod_page,
+            limit=st.session_state.prod_limit
+        )
+        st.session_state.total_prod_count = total_count
         st.session_state.prod_dict = {prod["_id"]: prod for prod in st.session_state.all_produs}
         st.session_state.prod_ids = list(st.session_state.prod_dict.keys())
         st.session_state.prod_index = 0
@@ -619,15 +631,46 @@ def display_produs_management_page():
         st.write("No produs found.")
         return
 
-    selected_prod_id = st.selectbox("Select Produs ID", st.session_state.prod_ids, index=st.session_state.prod_index)
-    selected_prod = st.session_state.prod_dict[selected_prod_id]
+    # Display current page and total pages
+    total_pages = (st.session_state.total_prod_count // st.session_state.prod_limit) + 1
+    st.write(f"Page {st.session_state.prod_page} of {total_pages}")
 
+    # Select and display selected product
+    selected_prod_id = st.selectbox(
+        "Select Produs ID",
+        st.session_state.prod_ids,
+        index=st.session_state.prod_index
+    )
+    selected_prod = st.session_state.prod_dict[selected_prod_id]
     st.write("Produs Details:", selected_prod)
 
-    if st.button("Next", key="next_button"):
-        st.session_state.prod_index = (st.session_state.prod_index + 1) % len(st.session_state.prod_ids)
-        st.rerun()
+    # Handle next page button
+    if st.button("Next Page", key="next_page_button"):
+        if st.session_state.prod_page < total_pages:
+            st.session_state.prod_page += 1
+            st.session_state.all_produs, _ = fetch_all_produs(
+                page=st.session_state.prod_page,
+                limit=st.session_state.prod_limit
+            )
+            st.session_state.prod_dict = {prod["_id"]: prod for prod in st.session_state.all_produs}
+            st.session_state.prod_ids = list(st.session_state.prod_dict.keys())
+            st.session_state.prod_index = 0
+            st.rerun()
 
+    # Handle previous page button
+    if st.button("Previous Page", key="previous_page_button"):
+        if st.session_state.prod_page > 1:
+            st.session_state.prod_page -= 1
+            st.session_state.all_produs, _ = fetch_all_produs(
+                page=st.session_state.prod_page,
+                limit=st.session_state.prod_limit
+            )
+            st.session_state.prod_dict = {prod["_id"]: prod for prod in st.session_state.all_produs}
+            st.session_state.prod_ids = list(st.session_state.prod_dict.keys())
+            st.session_state.prod_index = 0
+            st.rerun()
+
+    # The rest of the code for handling "Find Bon Zilnic" and other functionality
     if st.button("Find Bon Zilnic", key="find_bon_zilnic_button"):
         st.session_state.find_bon_zilnic_clicked = True
 
@@ -711,6 +754,9 @@ def display_produs_management_page():
 
     if st.session_state.get('submission_status') == "completed":
         st.success("Bon Zilnic created successfully!")
+        st.session_state.form_data = None
+        st.session_state.submission_status = None
+        st.rerun()
         # if st.button("Acknowledge"):
         #     st.session_state.form_data = None  # Reset form data after submission
         #     st.session_state.submission_status = None

@@ -222,16 +222,17 @@ def aggregate_data():
         return f"An error occurred during data aggregation: {str(e)}"
 
 
-def fetch_all_produs():
-    url = f'{API_URL}/get_produs_documents'
+def fetch_all_produs(page=1, limit=20):
+    url = f'{API_URL}/get_produs_documents?page={page}&limit={limit}'
 
     try:
         response = requests.get(url)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        return data["documents"], data["total_count"]
     except requests.exceptions.RequestException as e:
-        st.error(f"Error fetching all products: {e}")
-        return []
+        st.error(f"Error fetching products: {e}")
+        return [], 0
 
 
 def fetch_bon_by_id(bon_id):

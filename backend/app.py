@@ -16,17 +16,17 @@ app = Flask(__name__)
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
 
-client = MongoClient(f'mongodb://{config.MONGO_USER}:{config.MONGO_PASS}@{config.MONGO_HOST}:{config.MONGO_PORT}/{config.MONGO_DB}?authSource=admin',
-                     connectTimeoutMS=30000,  # 30 seconds
-                     socketTimeoutMS=30000,  # 30 seconds
-                     serverSelectionTimeoutMS=30000  # 30 seconds
-                     )
-db = client[config.MONGO_DB]
+# client = MongoClient(f'mongodb://{config.MONGO_USER}:{config.MONGO_PASS}@{config.MONGO_HOST}:{config.MONGO_PORT}/{config.MONGO_DB}?authSource=admin',
+#                      connectTimeoutMS=30000,  # 30 seconds
+#                      socketTimeoutMS=30000,  # 30 seconds
+#                      serverSelectionTimeoutMS=30000  # 30 seconds
+#                      )
+# db = client[config.MONGO_DB]
 
 
-# client = MongoClient(
-#     "mongodb+srv://zaporojan40:xl2PWid0jE0etk1P@cluster0.b8gpgd1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-# db = client['bigDataDB']
+client = MongoClient(
+    "mongodb+srv://zaporojan40:xl2PWid0jE0etk1P@cluster0.b8gpgd1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db = client['bigDataDB']
 
 
 # Test connection and fetch one document
@@ -854,12 +854,24 @@ def aggregate_data_endpoint():
 @app.route('/get_produs_documents', methods=['GET'])
 def get_produs_documents():
     try:
-        results = list(db["ECR.produs"].find({}))
+        # Get page number and limit from query parameters
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 20))
+
+        # Calculate skip value
+        skip = (page - 1) * limit
+
+        # Fetch the paginated results
+        results = list(db["ECR.produs"].find().skip(skip).limit(limit))
         results = [serialize_doc(result) for result in results]
-        return jsonify(results), 200
+
+        # Optionally, return total count of documents for pagination control
+        total_count = db["ECR.produs"].count_documents({})
+
+        return jsonify({"total_count": total_count, "documents": results}), 200
     except Exception as e:
-        logging.error(f"Error fetching all products: {e}")
-        return jsonify({"error": "Error fetching all products"}), 500
+        logging.error(f"Error fetching products: {e}")
+        return jsonify({"error": "Error fetching products"}), 500
 
 
 @app.route('/get_bon_by_id', methods=['GET'])
